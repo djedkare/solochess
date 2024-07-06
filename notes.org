@@ -1,0 +1,68 @@
+* Rules
+- if there's a king on the board, it needs to be the piece that
+  survives
+- pawns don't promote when they reach the end of the board
+- the preconditions of en passant can never be satisfied in this game
+- because every move has to be a capture, only the diagonal pawn moves
+  need to be implemented
+- the squares occupied in an initial position are the only squares
+  that can be occupied in any continuation
+  - this makes it possible to compress the positions into fixed-size
+    arrays (e.g. size 8 for an initial position with 8 pieces) that
+    can be used as indices for an associative data structure
+  - this also means that we don't need to check wether a square is
+    still inside the bounds of the board
+* Notes
+- only ever use = and <>, any use of == or != is probably an oversight
+- finding possible moves and applying them is hard to do in a way that
+  doesn't spill type information
+- why is there no seq_of_list method in the standard library? is that
+  something stupid to do?
+- we annotate values' types because we want to verify that the
+  compiler agrees with us and we haven't gotten anything wrong. the
+  annotation doesn't change the code. On the other hand, we annotate
+  modules' types to restrict what they expose (which methods and
+  types, the internal structure of which types...)
+- when a module has `module BoardMap = Map.Make (Coordinate)` and we
+  want to expose it, the interface needs `module BoardMap : Map.S with
+  type key = int * int`
+  - The error message "The module Map.Make is a functor, it cannot
+    have any components" was not comprehensible to me
+- at first, I tried having only a single position type for everything
+  - Perlis: "It is better to have 100 functions operate on one data
+    structure than 10 functions on 10 data structures."
+  - But this type needed then to include information on how its position
+    was reached, because it would be the return type of the
+    backtracking method.
+  - And a lot of code (e.g. test cases) I wrote using this position
+    type didn't need this extra information, and I found myself
+    supplying dummy values for the `initial_position` and `history`
+    fields, and then comparing `position` values only on their
+    `current_position` fields.
+  - Solution: 2 types!
+    - small position type that only includes pieces on the board (plus
+      their stamina), on which the methods to check the win condition
+      and find legal moves operates
+    - larger type that includes move history and will implement the
+      `Puzzle` module by using the smaller type's methods
+- is `raise (Failure "not implemented")` OCaml's `undefined`?
+- is there a way to have 2 build commands, one which is less strict
+  and doesn't error on a bunch of warnings?
+- Some problems that I would have expected to be type errors get
+  expressed as warnings (`Error (warning 5): this function application
+  is partial, maybe some arguments are missing.`). This happens when I
+  change the first right hand side of a pattern matching expression to
+  a value of a different type.
+** Format
+- in ocaml, there's no `Show` typeclass, so you have to supply the
+  pretty printers yourself
+- the standard `Format.formatter -> 'a -> unit` pretty printer
+  architecture took some getting used to
+  - how to return such a pprinters output as a string
+    (`Format.asprintf "%a" pp x`) was not immediately obvious (also,
+    asprintf has a weird type, like all printf-style functions in
+    OCaml, which doesn't exactly make it easier)
+- in this tiny project I have already encountered 2 different formats
+  for pretty printers ((Format.formatter -> 'a -> unit) and ('a ->
+  string))
+- also, what's up with channels? are they a pre-Format artifact?

@@ -1,0 +1,8 @@
+(test
+ (name test)
+ (libraries solochess ounit2 fmt))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A))))
